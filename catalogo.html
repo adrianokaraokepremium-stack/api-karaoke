@@ -4,136 +4,88 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Adriano Karaokê - Profissional</title>
-    <!-- Incluindo a biblioteca Dexie.js para o banco de dados local -->
     <script src="https://unpkg.com/dexie/dist/dexie.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/fuzzysort@2.0.4/fuzzysort.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Arial, sans-serif; transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease; }
-        body { background-color: #0B0A12; color: #FFFFFF; display: flex; justify-content: center; align-items: flex-start; min-height: 100vh; overflow-x: hidden; padding-bottom: 80px; }
-        
-        /* MODO CLARO */
-        body.modo-claro { background-color: #4A32A1 !important; }
-        body.modo-claro .app-container { background-color: #4A32A1 !important; }
-        body.modo-claro .card-contador, body.modo-claro .card-musica, body.modo-claro .input-pesquisa, body.modo-claro .btn-novas { background-color: #FFFFFF !important; border: 1px solid #CCCCCC !important; color: #333333 !important; }
-        body.modo-claro .txt-musica { color: #000000 !important; }
-        body.modo-claro .txt-label { color: #546E7A !important; }
-        body.modo-claro .txt-cantor { color: #007BFF !important; } 
-        body.modo-claro .txt-codigo { color: #D81B60 !important; }
-        body.modo-claro .menu-inferior { background-color: #4A32A1 !important; }
-        body.modo-claro .slider { background-color: #FFFFFF !important; border: 1px solid #333 !important; }
-        body.modo-claro .slider:before { background-color: #4A32A1 !important; }
-        body.modo-claro .contador-valor, body.modo-claro .contador-info { color: #333333 !important; }
-        
-        .app-container { width: 100%; max-width: 450px; background-color: #0B0A12; display: flex; flex-direction: column; }
-        .banner-topo { width: 100%; height: auto; display: block; border-bottom: 3px solid #161426; }
-        .contadores-container { display: flex; gap: 12px; padding: 15px; width: 100%; }
-        
-        .card-contador { flex: 1; background-color: #161426; border-radius: 12px; padding: 12px; display: flex; justify-content: space-between; align-items: center; border: 1px solid rgba(255, 255, 255, 0.05); min-height: 48px; cursor: pointer; }
-        .contador-info { display: flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 600; color: #FFFFFF; }
-        .contador-valor { font-size: 16px; font-weight: bold; color: #FFFFFF; }
-
-        .filtros-row { display: flex; justify-content: space-between; align-items: center; padding: 0 15px 15px 15px; }
-        .filtro-item { display: flex; align-items: center; gap: 8px; font-size: 12px; font-weight: bold; color: #8884A4; text-transform: uppercase; }
-        .switch { position: relative; display: inline-block; width: 44px; height: 22px; }
-        .switch input { opacity: 0; width: 0; height: 0; }
-        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #161426; border-radius: 22px; border: 1px solid rgba(255, 255, 255, 0.2); }
-        .slider:before { position: absolute; content: ""; height: 14px; width: 14px; left: 3px; bottom: 3px; background-color: #8884A4; border-radius: 50%; }
-        input:checked + .slider { background-color: #FFFFFF; }
-        input:checked + .slider:before { transform: translateX(22px); background-color: #161426; }
-        
-        .btn-novas { background-color: #161426; border: 1px solid #FFFFFF; color: #FFFFFF; padding: 8px 16px; border-radius: 20px; font-size: 12px; font-weight: 600; cursor: pointer; text-transform: uppercase; }
-        .pesquisa-container { padding: 0 15px 15px 15px; position: relative; }
-        .input-pesquisa { width: 100%; background-color: #161426; border: 2px solid transparent; color: #FFFFFF; padding: 12px 45px; border-radius: 25px; font-size: 15px; outline: none; }
-        
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Arial, sans-serif; }
+        body { background-color: #0B0A12; color: #FFFFFF; min-height: 100vh; padding-bottom: 80px; }
+        .app-container { width: 100%; max-width: 450px; margin: auto; display: flex; flex-direction: column; }
+        .banner-topo { width: 100%; height: auto; border-bottom: 3px solid #161426; }
+        .contadores-container { display: flex; gap: 12px; padding: 15px; }
+        .card-contador { flex: 1; background-color: #161426; border-radius: 12px; padding: 12px; text-align: center; }
+        .pesquisa-container { padding: 0 15px 15px 15px; }
+        .input-pesquisa { width: 100%; background-color: #161426; border: 2px solid #5A94CB; color: #FFFFFF; padding: 12px; border-radius: 25px; outline: none; }
         .lista-musicas { padding: 0 15px; display: flex; flex-direction: column; gap: 12px; }
         .card-musica { background-color: #161426; border-radius: 14px; padding: 12px; display: flex; align-items: center; justify-content: space-between; border-left: 5px solid #5A94CB; }
-        .avatar-artista { width: 55px; height: 55px; border-radius: 10px; }
-        .musica-detalhes { display: flex; flex-direction: column; gap: 2px; }
-        .txt-label { font-size: 13px; color: #8884A4; font-weight: 500; }
-        .txt-musica { font-size: 15px; color: #FFFFFF; font-weight: 700; } 
-        .txt-cantor { font-size: 15px; color: #5A94CB; font-weight: 700; } 
-        .txt-codigo { font-size: 15px; color: #FF4D4D; font-weight: 700; } 
-        
-        .musica-acoes { display: flex; gap: 25px; font-size: 20px; color: #FFFFFF; }
-        .menu-inferior { position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 450px; background-color: #161426; border-top: 2px solid rgba(255, 255, 255, 0.1); display: flex; justify-content: space-around; align-items: center; height: 60px; z-index: 1000; }
-        .menu-item { display: flex; flex-direction: column; align-items: center; color: #8884A4; text-decoration: none; font-size: 10px; font-weight: 600; cursor: pointer; }
-        .menu-item i { font-size: 20px !important; margin-bottom: 2px; display: block; }
+        .txt-musica { font-size: 15px; font-weight: 700; }
+        .txt-cantor { font-size: 13px; color: #5A94CB; }
+        .txt-codigo { font-size: 15px; color: #FF4D4D; font-weight: 700; }
+        .menu-inferior { position: fixed; bottom: 0; width: 100%; max-width: 450px; background-color: #161426; display: flex; justify-content: space-around; padding: 15px; border-top: 1px solid #333; }
+        .menu-item { color: #8884A4; text-decoration: none; font-size: 12px; text-align: center; }
     </style>
 </head>
 <body>
     <div class="app-container">
         <img src="assets/banner.jpg" alt="Banner" class="banner-topo">
         <div class="contadores-container">
-            <div class="card-contador"><div class="contador-info"><i class="fa-solid fa-heart" style="color: #FF4D4D;"></i> Favoritas</div><div class="contador-valor" id="count-favoritas">0</div></div>
-            <div class="card-contador"><div class="contador-info"><i class="fa-solid fa-music"></i> Músicas</div><div class="contador-valor" id="count-total">...</div></div>
-        </div>
-        <div class="filtros-row">
-            <div class="filtro-item"><i class="fa-solid fa-music"></i><label class="switch"><input type="checkbox" id="check-ordem"><span class="slider"></span></label><i class="fa-solid fa-user"></i></div>
-            <button class="btn-novas">MÚSICAS NOVAS</button>
-            <div class="filtro-item"><i class="fa-solid fa-sun"></i><label class="switch"><input type="checkbox" id="tema-check"><span class="slider"></span></label><i class="fa-solid fa-moon"></i></div>
+            <div class="card-contador">Músicas: <span id="count-total">0</span></div>
         </div>
         <div class="pesquisa-container">
-            <input type="text" id="input-pesquisa" class="input-pesquisa" placeholder="Pesquisar...">
+            <input type="text" id="input-pesquisa" class="input-pesquisa" placeholder="Pesquisar (aceita erros de digitação)..." oninput="realizarBusca()">
         </div>
-        <div class="lista-musicas" id="container-musicas"><p style="text-align: center;">Carregando dados...</p></div>
+        <div class="lista-musicas" id="container-musicas"></div>
         <nav class="menu-inferior">
-            <a class="menu-item ativo"><i class="fa-solid fa-house"></i>Catálogo</a>
-            <a class="menu-item"><i class="fa-solid fa-heart"></i>Favoritos</a>
-            <a class="menu-item"><i class="fa-solid fa-gear"></i>Ferramentas</a>
+            <a class="menu-item" href="/">Catálogo</a>
+            <a class="menu-item" href="#">Favoritos</a>
+            <a class="menu-item" href="#">Ferramentas</a>
         </nav>
     </div>
 
     <script>
-        // Configuração do Banco Local (IndexedDB com Dexie)
         const db = new Dexie('KaraokeDB');
         db.version(1).stores({ musicas: '++id,titulo,cantor,codigo' });
+        let listaCompleta = [];
 
         async function carregarDados() {
-            // 1. Tenta carregar do IndexedDB primeiro (Instantâneo)
-            const musicasLocais = await db.musicas.toArray();
-            if (musicasLocais.length > 0) {
-                renderizarLista(musicasLocais);
-            }
+            listaCompleta = await db.musicas.toArray();
+            if (listaCompleta.length > 0) renderizarLista(listaCompleta);
 
-            // 2. Busca na Nuvem em segundo plano
             try {
-                const resposta = await fetch('https://api-karaoke-9umv.onrender.com/musicas');
-                const musicasNuvem = await resposta.json();
-                
-                // Se a lista mudou, atualiza o banco local
+                const res = await fetch('/musicas');
+                const nuvem = await res.json();
                 await db.musicas.clear();
-                await db.musicas.bulkPut(musicasNuvem);
-                renderizarLista(musicasNuvem);
-            } catch (erro) {
-                console.log("Offline ou erro na rede, mantendo dados locais.");
-            }
+                await db.musicas.bulkPut(nuvem);
+                listaCompleta = nuvem;
+                renderizarLista(listaCompleta);
+            } catch (e) { console.log("Usando modo offline"); }
         }
 
         function renderizarLista(lista) {
             const container = document.getElementById('container-musicas');
             container.innerHTML = '';
             document.getElementById('count-total').innerText = lista.length;
-            
             lista.forEach(m => {
                 const card = document.createElement('div');
                 card.className = 'card-musica';
                 card.innerHTML = `
-                    <div style="display: flex; align-items: center; gap: 12px; flex: 1;">
-                        <img src="assets/cantores/1kilo.jpg" class="avatar-artista">
-                        <div class="musica-detalhes">
-                            <span class="txt-musica">${m.titulo || 'Sem Título'}</span>
-                            <span class="txt-cantor">${m.cantor || 'Sem Artista'}</span>
-                        </div>
+                    <div>
+                        <div class="txt-musica">${m.titulo || 'Sem Título'}</div>
+                        <div class="txt-cantor">${m.cantor || 'Sem Artista'}</div>
                     </div>
-                    <span class="txt-codigo">${String(m.codigo || 0).padStart(5, '0')}</span>`;
+                    <div class="txt-codigo">${String(m.codigo || 0).padStart(5, '0')}</div>`;
                 container.appendChild(card);
             });
         }
 
-        // Função de Tema
-        document.getElementById('tema-check').addEventListener('change', () => {
-            document.body.classList.toggle('modo-claro');
-        });
+        function realizarBusca() {
+            const termo = document.getElementById('input-pesquisa').value;
+            if (!termo) { renderizarLista(listaCompleta); return; }
+            
+            // Lógica da Busca Inteligente (Fuzzy Search)
+            const resultados = fuzzysort.go(termo, listaCompleta, { keys: ['titulo', 'cantor', 'codigo'] });
+            renderizarLista(resultados.map(r => r.obj));
+        }
 
         window.onload = carregarDados;
     </script>
